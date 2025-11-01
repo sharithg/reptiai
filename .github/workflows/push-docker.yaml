@@ -52,6 +52,21 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Update Railway deployment
+        working-directory: ./backend
+        env:
+          PNPM_HOME: /home/runner/.local/share/pnpm
+          PATH: /home/runner/.local/share/pnpm:$PATH
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm redeploy -- \
+            --serviceId=${{ secrets.RAILWAY_SERVICE_ID }} \
+            --environmentId=${{ secrets.RAILWAY_ENVIRONMENT_ID }} \
+            --image=index.docker.io/${{ secrets.DOCKER_USERNAME }}/reptiai-backend:${{ steps.meta.outputs.version }}
+
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v3
         with:
