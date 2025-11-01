@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 config()
 
+// environment variables schema
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   POSTGRES_URL: z

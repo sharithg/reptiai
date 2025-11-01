@@ -42,26 +42,6 @@ jobs:
             type=raw,value=latest
             type=sha
 
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Deploy to Railway
-        uses: docker://ghcr.io/railwayapp/cli:latest
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        with:
-          entrypoint: /bin/sh
-          args: -c "railway redeploy --service ${RAILWAY_SERVICE_ID} --yes"
-
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v3
         with:
