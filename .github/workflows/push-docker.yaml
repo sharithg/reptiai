@@ -60,7 +60,7 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         with:
           entrypoint: /bin/sh
-          args: -c "railway deployments create --service ${RAILWAY_SERVICE_ID} --image index.docker.io/${DOCKER_USERNAME}/reptiai-backend:latest"
+          args: -c "railway redeploy --service ${RAILWAY_SERVICE_ID} --yes"
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v3
