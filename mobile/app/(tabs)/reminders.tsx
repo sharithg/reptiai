@@ -230,7 +230,7 @@ export default function RemindersScreen() {
         body: {
           title: trimmedTitle,
           notes: trimmedNotes ? trimmedNotes : undefined,
-          isReminder,
+      isReminder,
           dueDate: isReminder ? dueDate.toISOString() : undefined,
         },
       });
@@ -242,14 +242,14 @@ export default function RemindersScreen() {
         created.dueDate &&
         created.dueDate.getTime() > Date.now()
       ) {
-        const notificationId = await scheduleNotification(
+      const notificationId = await scheduleNotification(
           created.id,
           created.title,
           created.dueDate,
           created.notes
-        );
+      );
 
-        if (notificationId) {
+      if (notificationId) {
           created = { ...created, notificationId };
 
           try {
@@ -265,15 +265,15 @@ export default function RemindersScreen() {
           } catch (error) {
             console.warn("Failed to persist notification id", error);
           }
-        }
       }
+    }
 
       setReminders((current) => [created, ...current]);
-      setTitle("");
-      setNotes("");
-      setIsReminder(false);
-      setDueDate(new Date());
-      setShowForm(false);
+    setTitle("");
+    setNotes("");
+    setIsReminder(false);
+    setDueDate(new Date());
+    setShowForm(false);
     } catch (error) {
       const message =
         error instanceof ApiError
@@ -306,11 +306,11 @@ export default function RemindersScreen() {
           await cancelNotification(target.notificationId);
           nextNotificationId = undefined;
         }
-      } else if (
+          } else if (
         target.isReminder &&
         target.dueDate &&
         target.dueDate.getTime() > Date.now()
-      ) {
+          ) {
         scheduledNotificationId = await scheduleNotification(
           target.id,
           target.title,
@@ -367,14 +367,14 @@ export default function RemindersScreen() {
 
       const target = reminders.find((reminder) => reminder.id === id);
 
-      Alert.alert(
-        "Delete Reminder",
-        "Are you sure you want to delete this reminder?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
+    Alert.alert(
+      "Delete Reminder",
+      "Are you sure you want to delete this reminder?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
             onPress: async () => {
               if (target?.notificationId) {
                 await cancelNotification(target.notificationId);
@@ -398,19 +398,19 @@ export default function RemindersScreen() {
                 loadReminders();
               }
             },
-          },
-        ]
-      );
+        },
+      ]
+    );
     },
     [loadReminders, reminders, token]
   );
 
   const filteredReminders = useMemo(() => {
     return reminders.filter((reminder) => {
-      if (filter === "active") return !reminder.isCompleted;
-      if (filter === "completed") return reminder.isCompleted;
-      return true;
-    });
+    if (filter === "active") return !reminder.isCompleted;
+    if (filter === "completed") return reminder.isCompleted;
+    return true;
+  });
   }, [filter, reminders]);
 
   const colors = Colors[colorScheme ?? "light"];

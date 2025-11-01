@@ -40,19 +40,19 @@ export default function SettingsScreen() {
 
           <ThemedSurface>
             <View style={styles.accountContainer}>
-              <View
-                style={[
-                  styles.avatarFallback,
-                  { backgroundColor: colors.primary + "20" },
-                ]}
-              >
-                <ThemedText
-                  type="defaultSemiBold"
-                  style={{ color: colors.primary }}
+                <View
+                  style={[
+                    styles.avatarFallback,
+                    { backgroundColor: colors.primary + "20" },
+                  ]}
                 >
+                  <ThemedText
+                    type="defaultSemiBold"
+                    style={{ color: colors.primary }}
+                  >
                   {initials}
-                </ThemedText>
-              </View>
+                  </ThemedText>
+                </View>
 
               <View style={styles.accountDetails}>
                 <ThemedText

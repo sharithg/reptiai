@@ -220,14 +220,14 @@ export default function FeedingScreen() {
         return
       }
 
-      Alert.alert(
-        'Delete Feeding',
-        'Are you sure you want to delete this feeding record?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
+    Alert.alert(
+      'Delete Feeding',
+      'Are you sure you want to delete this feeding record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
             onPress: async () => {
               try {
                 await apiRequest<{ success: boolean }>(`/feedings/${id}`, {
@@ -343,7 +343,7 @@ export default function FeedingScreen() {
                 Alert.alert('Delete failed', message)
               }
             },
-          },
+        },
         ],
       )
     },
@@ -388,8 +388,8 @@ export default function FeedingScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
+      <ScrollView 
+        style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -438,66 +438,66 @@ export default function FeedingScreen() {
           <ThemedSurface elevation="md" style={styles.form}>
             {activeSegment === 'feedings' ? (
               <>
-                <ThemedText type="subtitle" style={[styles.formTitle, { color: colors.text }]}>
-                  Log New Feeding
-                </ThemedText>
+            <ThemedText type="subtitle" style={[styles.formTitle, { color: colors.text }]}>
+              Log New Feeding
+            </ThemedText>
+            
+            <ThemedText style={[styles.label, { color: colors.text }]}>Food Type *</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: colors.border,
+                  color: colors.text,
+                  backgroundColor: colors.backgroundSecondary,
+                },
+              ]}
+              placeholder="e.g., Crickets, Mealworms, Vegetables"
+              placeholderTextColor={colors.textTertiary}
+              value={foodType}
+              onChangeText={setFoodType}
+            />
 
-                <ThemedText style={[styles.label, { color: colors.text }]}>Food Type *</ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: colors.border,
-                      color: colors.text,
-                      backgroundColor: colors.backgroundSecondary,
-                    },
-                  ]}
-                  placeholder="e.g., Crickets, Mealworms, Vegetables"
-                  placeholderTextColor={colors.textTertiary}
-                  value={foodType}
-                  onChangeText={setFoodType}
-                />
+            <ThemedText style={[styles.label, { color: colors.text }]}>Quantity *</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: colors.border,
+                  color: colors.text,
+                  backgroundColor: colors.backgroundSecondary,
+                },
+              ]}
+              placeholder="e.g., 5, 10g, 2 pieces"
+              placeholderTextColor={colors.textTertiary}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="default"
+            />
 
-                <ThemedText style={[styles.label, { color: colors.text }]}>Quantity *</ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: colors.border,
-                      color: colors.text,
-                      backgroundColor: colors.backgroundSecondary,
-                    },
-                  ]}
-                  placeholder="e.g., 5, 10g, 2 pieces"
-                  placeholderTextColor={colors.textTertiary}
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  keyboardType="default"
-                />
+            <ThemedText style={[styles.label, { color: colors.text }]}>Notes (Optional)</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                styles.textArea,
+                {
+                  borderColor: colors.border,
+                  color: colors.text,
+                  backgroundColor: colors.backgroundSecondary,
+                },
+              ]}
+              placeholder="Additional notes..."
+              placeholderTextColor={colors.textTertiary}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
 
-                <ThemedText style={[styles.label, { color: colors.text }]}>Notes (Optional)</ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.textArea,
-                    {
-                      borderColor: colors.border,
-                      color: colors.text,
-                      backgroundColor: colors.backgroundSecondary,
-                    },
-                  ]}
-                  placeholder="Additional notes..."
-                  placeholderTextColor={colors.textTertiary}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[styles.submitButton, { backgroundColor: primaryColor, ...Shadows.sm }]}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.submitButton, { backgroundColor: primaryColor, ...Shadows.sm }]}
                   onPress={addFeeding}
                   disabled={isSubmittingFeeding}
                 >
@@ -623,7 +623,7 @@ export default function FeedingScreen() {
                   disabled={isSubmittingMeasurement}
                 >
                   <ThemedText style={styles.submitButtonText}>{activeButtonLabel}</ThemedText>
-                </TouchableOpacity>
+            </TouchableOpacity>
               </>
             )}
           </ThemedSurface>
@@ -632,15 +632,15 @@ export default function FeedingScreen() {
         {activeSegment === 'feedings' ? (
           <ThemedView style={styles.sectionContainer}>
             <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>
-              Feeding History
-            </ThemedText>
+            Feeding History
+          </ThemedText>
             {isLoadingActiveSegment ? (
-              <ThemedView style={styles.emptyState}>
-                <IconSymbol
+            <ThemedView style={styles.emptyState}>
+              <IconSymbol
                   name="arrow.triangle.2.circlepath"
                   size={36}
-                  color={colors.iconSecondary}
-                />
+                color={colors.iconSecondary}
+              />
                 <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
                   Loading feedings…
                 </ThemedText>
@@ -648,11 +648,11 @@ export default function FeedingScreen() {
             ) : sortedFeedings.length === 0 ? (
               <ThemedView style={styles.emptyState}>
                 <IconSymbol name="fork.knife" size={48} color={colors.iconSecondary} />
-                <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
-                  No feedings logged yet. Tap the + button to add your first feeding!
-                </ThemedText>
-              </ThemedView>
-            ) : (
+              <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No feedings logged yet. Tap the + button to add your first feeding!
+              </ThemedText>
+            </ThemedView>
+          ) : (
               sortedFeedings.map((feeding) => {
                 const dateLabel = feeding.date.toLocaleDateString()
                 const timeLabel = feeding.date.toLocaleTimeString([], {
@@ -668,44 +668,44 @@ export default function FeedingScreen() {
                           type="defaultSemiBold"
                           style={[styles.cardTitle, { color: colors.text }]}
                         >
-                          {feeding.foodType}
-                        </ThemedText>
+                      {feeding.foodType}
+                    </ThemedText>
                         <ThemedText style={{ color: colors.textSecondary }}>
-                          {feeding.quantity}
-                        </ThemedText>
-                      </View>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        onPress={() => deleteFeeding(feeding.id)}
+                      {feeding.quantity}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => deleteFeeding(feeding.id)}
                         style={styles.deleteButton}
                       >
-                        <IconSymbol name="trash" size={18} color={colors.error} />
-                      </TouchableOpacity>
-                    </View>
-
+                    <IconSymbol name="trash" size={18} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+                
                     <View style={styles.metaRow}>
-                      <View style={styles.metaItem}>
-                        <IconSymbol name="calendar" size={16} color={primaryColor} />
-                        <ThemedText style={[styles.metaText, { color: colors.textSecondary }]}>
+                  <View style={styles.metaItem}>
+                    <IconSymbol name="calendar" size={16} color={primaryColor} />
+                    <ThemedText style={[styles.metaText, { color: colors.textSecondary }]}>
                           {dateLabel}
-                        </ThemedText>
-                      </View>
-                      <View style={styles.metaItem}>
-                        <IconSymbol name="clock" size={16} color={primaryColor} />
-                        <ThemedText style={[styles.metaText, { color: colors.textSecondary }]}>
+                    </ThemedText>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <IconSymbol name="clock" size={16} color={primaryColor} />
+                    <ThemedText style={[styles.metaText, { color: colors.textSecondary }]}>
                           {timeLabel}
-                        </ThemedText>
-                      </View>
-                    </View>
+                    </ThemedText>
+                  </View>
+                </View>
 
-                    {feeding.notes && (
-                      <View style={[styles.notesContainer, { borderTopColor: colors.divider }]}>
+                {feeding.notes && (
+                  <View style={[styles.notesContainer, { borderTopColor: colors.divider }]}>
                         <ThemedText style={[styles.notesText, { color: colors.textSecondary }]}>
-                          {feeding.notes}
-                        </ThemedText>
-                      </View>
-                    )}
-                  </ThemedSurface>
+                      {feeding.notes}
+                    </ThemedText>
+                  </View>
+                )}
+              </ThemedSurface>
                 )
               })
             )}
@@ -797,8 +797,8 @@ export default function FeedingScreen() {
                   </ThemedSurface>
                 )
               })
-            )}
-          </ThemedView>
+          )}
+        </ThemedView>
         )}
       </ScrollView>
     </ThemedView>

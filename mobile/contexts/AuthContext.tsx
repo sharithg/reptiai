@@ -131,24 +131,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleAuthentication = useCallback(
     async (endpoint: "/auth/login" | "/auth/register", credentials: Credentials) => {
-      setError(null);
-      setIsAuthenticating(true);
+    setError(null);
+    setIsAuthenticating(true);
 
-      try {
+    try {
         const payload = await apiRequest<AuthResponse>(endpoint, {
           method: "POST",
           body: credentials,
-        });
+      });
 
         await applyAuthState(payload.user, payload.session);
-      } catch (authError) {
-        const message =
+    } catch (authError) {
+      const message =
           authError instanceof Error ? authError.message : "Authentication failed";
-        setError(message);
-        throw authError;
-      } finally {
-        setIsAuthenticating(false);
-      }
+      setError(message);
+      throw authError;
+    } finally {
+      setIsAuthenticating(false);
+    }
     },
     [applyAuthState]
   );

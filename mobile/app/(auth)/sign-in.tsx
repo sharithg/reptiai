@@ -72,25 +72,25 @@ export default function SignInScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={[styles.card, { backgroundColor: colors.backgroundSecondary }]}> 
-        <Image
-          source={require("@/assets/images/icon.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+      <Image
+        source={require("@/assets/images/icon.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
 
         <ThemedText type="title" style={{ color: colors.text, textAlign: "center" }}>
           Welcome to ReptiAI
-        </ThemedText>
+      </ThemedText>
 
-        <ThemedText
-          style={{
-            color: colors.textSecondary,
-            textAlign: "center",
+      <ThemedText
+        style={{
+          color: colors.textSecondary,
+          textAlign: "center",
             marginTop: Spacing.xs,
-          }}
-        >
+        }}
+      >
           {helperText}
-        </ThemedText>
+      </ThemedText>
 
         <View style={styles.form}>
           <ThemedText type="defaultSemiBold" style={{ color: colors.text }}>
@@ -152,26 +152,26 @@ export default function SignInScreen() {
           </ThemedText>
         )}
 
-        <Pressable
-          accessibilityRole="button"
+      <Pressable
+        accessibilityRole="button"
           disabled={isAuthenticating}
           onPress={handleSubmit}
-          style={({ pressed }) => [
+        style={({ pressed }) => [
             styles.primaryButton,
-            {
-              backgroundColor: colors.primary,
+          {
+            backgroundColor: colors.primary,
               opacity: pressed || isAuthenticating ? 0.7 : 1,
-            },
-          ]}
-        >
-          {isAuthenticating ? (
-            <ActivityIndicator color={colors.background} />
-          ) : (
+          },
+        ]}
+      >
+        {isAuthenticating ? (
+          <ActivityIndicator color={colors.background} />
+        ) : (
             <ThemedText type="defaultSemiBold" style={styles.primaryButtonText}>
               {primaryLabel}
-            </ThemedText>
-          )}
-        </Pressable>
+          </ThemedText>
+        )}
+      </Pressable>
 
         <Pressable
           accessibilityRole="button"
