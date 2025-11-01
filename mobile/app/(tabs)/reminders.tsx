@@ -1,3 +1,4 @@
+import { AnimalSelector } from "@/components/animal-selector";
 import { ThemedSurface } from "@/components/themed-surface";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -22,6 +23,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "@/hooks/use-auth";
+import { useAnimals } from "@/hooks/use-animals";
 import { apiRequest, ApiError } from "@/lib/api";
 
 Notifications.setNotificationHandler({
@@ -42,6 +44,7 @@ type ReminderResponse = {
   dueDate: string | null;
   isCompleted: boolean;
   notificationId: string | null;
+  animalId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,6 +59,7 @@ interface Reminder {
   createdAt: Date;
   updatedAt: Date;
   notificationId?: string;
+  animalId?: string;
 }
 
 function toReminder(record: ReminderResponse): Reminder {
@@ -69,12 +73,14 @@ function toReminder(record: ReminderResponse): Reminder {
     createdAt: new Date(record.createdAt),
     updatedAt: new Date(record.updatedAt),
     notificationId: record.notificationId ?? undefined,
+    animalId: record.animalId ?? undefined,
   };
 }
 
 export default function RemindersScreen() {
   const colorScheme = useColorScheme();
   const { session } = useAuth();
+  const { selectedAnimal, isHydrated: animalsHydrated } = useAnimals();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -89,16 +95,20 @@ export default function RemindersScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = session?.token ?? null;
+  const activeAnimalId = selectedAnimal?.id ?? null;
+  const canManageReminders = Boolean(activeAnimalId);
+  const showAnimalPrompt = animalsHydrated && !canManageReminders;
 
   const loadReminders = useCallback(async () => {
-    if (!token) {
+    if (!token || !activeAnimalId) {
       setReminders([]);
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await apiRequest<ReminderResponse[]>("/reminders", {
+      const query = new URLSearchParams({ animalId: activeAnimalId }).toString();
+      const response = await apiRequest<ReminderResponse[]>(`/reminders?${query}`, {
         method: "GET",
         token,
       });
@@ -111,15 +121,30 @@ export default function RemindersScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [activeAnimalId, token]);
 
   useEffect(() => {
     registerForPushNotificationsAsync();
   }, []);
 
   useEffect(() => {
+    if (!animalsHydrated) {
+      return;
+    }
+
+    if (!activeAnimalId) {
+      setReminders([]);
+      return;
+    }
+
     loadReminders();
-  }, [loadReminders]);
+  }, [activeAnimalId, animalsHydrated, loadReminders]);
+
+  useEffect(() => {
+    if (!activeAnimalId) {
+      setShowForm(false);
+    }
+  }, [activeAnimalId]);
 
   const registerForPushNotificationsAsync = async () => {
     // Set up notification channel for Android
@@ -209,6 +234,14 @@ export default function RemindersScreen() {
       return;
     }
 
+    if (!selectedAnimal?.id) {
+      Alert.alert(
+        "Select an animal",
+        "Choose or add an animal before creating reminders."
+      );
+      return;
+    }
+
     if (!title.trim()) {
       Alert.alert("Required Field", "Please enter a title");
       return;
@@ -228,6 +261,7 @@ export default function RemindersScreen() {
         method: "POST",
         token,
         body: {
+          animalId: selectedAnimal.id,
           title: trimmedTitle,
           notes: trimmedNotes ? trimmedNotes : undefined,
       isReminder,
@@ -283,7 +317,7 @@ export default function RemindersScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [dueDate, isReminder, notes, title, token]);
+  }, [dueDate, isReminder, notes, selectedAnimal?.id, title, token]);
 
   const toggleComplete = useCallback(
     async (id: string) => {
@@ -422,6 +456,7 @@ export default function RemindersScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
+        <AnimalSelector />
         <ThemedView style={styles.header}>
           <ThemedText type="title" style={{ color: colors.text }}>
             Reminders & TODOs
@@ -432,7 +467,17 @@ export default function RemindersScreen() {
               styles.addButton,
               { backgroundColor: primaryColor, ...Shadows.sm },
             ]}
-            onPress={() => setShowForm(!showForm)}
+            onPress={() => {
+              if (!selectedAnimal?.id) {
+                Alert.alert(
+                  "Select an animal",
+                  "Add an animal before creating reminders."
+                );
+                return;
+              }
+              setShowForm((current) => !current);
+            }}
+            disabled={!canManageReminders}
           >
             <IconSymbol
               name={showForm ? "xmark" : "plus"}
@@ -705,7 +750,20 @@ export default function RemindersScreen() {
         </ThemedView>
 
         <ThemedView style={styles.listContainer}>
-          {isLoading ? (
+          {showAnimalPrompt ? (
+            <ThemedView style={styles.emptyState}>
+              <IconSymbol
+                name="tortoise"
+                size={48}
+                color={colors.iconSecondary}
+              />
+              <ThemedText
+                style={[styles.emptyText, { color: colors.textSecondary }]}
+              >
+                Select or add an animal above to manage reminders and tasks.
+              </ThemedText>
+            </ThemedView>
+          ) : isLoading ? (
             <ThemedView style={styles.emptyState}>
               <IconSymbol
                 name="arrow.triangle.2.circlepath"

@@ -36,6 +36,25 @@ export const session = pgTable('session', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+export const animal = pgTable(
+  'animal',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    species: text('species'),
+    description: text('description'),
+    birthDate: timestamp('birth_date'),
+    sex: text('sex'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    userAnimalNameUnique: uniqueIndex('animal_user_name_unique').on(table.userId, table.name),
+    userIdIdx: index('animal_user_id_idx').on(table.userId),
+  }),
+)
+
 // Devices that publish data (Pi, Mega, etc.)
 export const device = pgTable('device', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -179,6 +198,9 @@ export type NewUser = InferInsertModel<typeof user>
 export type Session = InferSelectModel<typeof session>
 export type NewSession = InferInsertModel<typeof session>
 
+export type Animal = InferSelectModel<typeof animal>
+export type NewAnimal = InferInsertModel<typeof animal>
+
 export type Device = InferSelectModel<typeof device>
 export type NewDevice = InferInsertModel<typeof device>
 
@@ -227,6 +249,7 @@ export const feedingTag = pgTable('feeding_tag', {
 export const feedingRecord = pgTable('feeding_record', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  animalId: uuid('animal_id').references(() => animal.id, { onDelete: 'cascade' }),
   feedingDate: timestamp('feeding_date').notNull(),
   consumed: text('consumed').notNull(), // 'fully', 'partially', 'refused'
   foodType: text('food_type'),
@@ -238,6 +261,7 @@ export const feedingRecord = pgTable('feeding_record', {
 }, (table) => ({
   feedingDateIdx: index('feeding_record_feeding_date_idx').on(table.feedingDate.desc()),
   userIdIdx: index('feeding_record_user_id_idx').on(table.userId),
+  userAnimalIdx: index('feeding_record_user_animal_idx').on(table.userId, table.animalId),
   consumedCheck: check('consumed_check', 
     sql`consumed IN ('fully', 'partially', 'refused')`
   ),
@@ -256,6 +280,7 @@ export const feedingRecordTag = pgTable('feeding_record_tag', {
 export const reminder = pgTable('reminder', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  animalId: uuid('animal_id').references(() => animal.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   notes: text('notes'),
   isReminder: boolean('is_reminder').notNull().default(false),
@@ -267,11 +292,13 @@ export const reminder = pgTable('reminder', {
 }, (table) => ({
   userDueDateIndex: index('reminder_user_due_date_idx').on(table.userId, table.dueDate.desc().nullsLast()),
   userCreatedAtIndex: index('reminder_user_created_at_idx').on(table.userId, table.createdAt.desc()),
+  userAnimalIdx: index('reminder_user_animal_idx').on(table.userId, table.animalId),
 }))
 
 export const measurementLog = pgTable('measurement_log', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  animalId: uuid('animal_id').references(() => animal.id, { onDelete: 'cascade' }),
   metricType: text('metric_type').notNull(),
   value: doublePrecision('value'),
   unit: text('unit'),
@@ -281,6 +308,7 @@ export const measurementLog = pgTable('measurement_log', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
   userRecordedAtIndex: index('measurement_user_recorded_at_idx').on(table.userId, table.recordedAt.desc()),
+  userAnimalIdx: index('measurement_user_animal_idx').on(table.userId, table.animalId),
 }))
 
 // Type exports for new feeding tables

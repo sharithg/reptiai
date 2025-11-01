@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
+import { AnimalProvider } from "@/contexts/AnimalContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { useAuth } from "@/hooks/use-auth";
@@ -78,7 +79,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootStackNavigator />
+        <AnimalProvider>
+          <RootStackNavigator />
+        </AnimalProvider>
       </AuthProvider>
     </ThemeProvider>
   );

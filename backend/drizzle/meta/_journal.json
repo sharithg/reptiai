@@ -29,6 +29,20 @@
       "when": 1761943167852,
       "tag": "0003_military_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1761973953616,
+      "tag": "0004_broad_squirrel_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761976585278,
+      "tag": "0005_brief_vampiro",
+      "breakpoints": true
     }
   ]
 }

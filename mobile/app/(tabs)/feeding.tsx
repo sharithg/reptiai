@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native'
 
+import { AnimalSelector } from '@/components/animal-selector'
 import { ThemedSurface } from '@/components/themed-surface'
 import { ThemedText } from '@/components/themed-text'
 import { ThemedView } from '@/components/themed-view'
@@ -16,6 +17,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol'
 import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/theme'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useAuth } from '@/hooks/use-auth'
+import { useAnimals } from '@/hooks/use-animals'
 import { apiRequest, ApiError } from '@/lib/api'
 
 const measurementPresets = [
@@ -34,6 +36,7 @@ type FeedingRecordResponse = {
   quantity: string | null
   notes: string | null
   weight: number | null
+  animalId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -45,6 +48,7 @@ type MeasurementRecordResponse = {
   unit: string | null
   notes: string | null
   recordedAt: string
+  animalId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -69,6 +73,7 @@ type Measurement = {
 export default function FeedingScreen() {
   const colorScheme = useColorScheme()
   const { session } = useAuth()
+  const { selectedAnimal, isHydrated: animalsHydrated } = useAnimals()
   const [activeSegment, setActiveSegment] = useState<Segment>('feedings')
   const [showForm, setShowForm] = useState(false)
 
@@ -89,16 +94,20 @@ export default function FeedingScreen() {
   const [isSubmittingMeasurement, setIsSubmittingMeasurement] = useState(false)
 
   const token = session?.token ?? null
+  const activeAnimalId = selectedAnimal?.id ?? null
+  const canLogEntries = Boolean(activeAnimalId)
+  const showAnimalPrompt = animalsHydrated && !canLogEntries
 
   const loadFeedings = useCallback(async () => {
-    if (!token) {
+    if (!token || !activeAnimalId) {
       setFeedings([])
       return
     }
 
     setIsLoadingFeedings(true)
     try {
-      const response = await apiRequest<FeedingRecordResponse[]>('/feedings', {
+      const query = new URLSearchParams({ animalId: activeAnimalId }).toString()
+      const response = await apiRequest<FeedingRecordResponse[]>(`/feedings?${query}`, {
         token,
         method: 'GET',
       })
@@ -120,17 +129,18 @@ export default function FeedingScreen() {
     } finally {
       setIsLoadingFeedings(false)
     }
-  }, [token])
+  }, [activeAnimalId, token])
 
   const loadMeasurements = useCallback(async () => {
-    if (!token) {
+    if (!token || !activeAnimalId) {
       setMeasurements([])
       return
     }
 
     setIsLoadingMeasurements(true)
     try {
-      const response = await apiRequest<MeasurementRecordResponse[]>('/measurements', {
+      const query = new URLSearchParams({ animalId: activeAnimalId }).toString()
+      const response = await apiRequest<MeasurementRecordResponse[]>(`/measurements?${query}`, {
         token,
         method: 'GET',
       })
@@ -151,12 +161,28 @@ export default function FeedingScreen() {
     } finally {
       setIsLoadingMeasurements(false)
     }
-  }, [token])
+  }, [activeAnimalId, token])
 
   useEffect(() => {
+    if (!animalsHydrated) {
+      return
+    }
+
+    if (!activeAnimalId) {
+      setFeedings([])
+      setMeasurements([])
+      return
+    }
+
     loadFeedings()
     loadMeasurements()
-  }, [loadFeedings, loadMeasurements])
+  }, [activeAnimalId, animalsHydrated, loadFeedings, loadMeasurements])
+
+  useEffect(() => {
+    if (!activeAnimalId) {
+      setShowForm(false)
+    }
+  }, [activeAnimalId])
 
   useEffect(() => {
     setShowForm(false)
@@ -165,6 +191,11 @@ export default function FeedingScreen() {
   const addFeeding = useCallback(async () => {
     if (!token) {
       Alert.alert('Not authenticated', 'Sign in to log a feeding record.')
+      return
+    }
+
+    if (!selectedAnimal?.id) {
+      Alert.alert('Select an animal', 'Please choose or create an animal before logging feedings.')
       return
     }
 
@@ -183,6 +214,7 @@ export default function FeedingScreen() {
         method: 'POST',
         token,
         body: {
+          animalId: selectedAnimal.id,
           foodType: trimmedFoodType,
           quantity: trimmedQuantity,
           notes: trimmedNotes ? trimmedNotes : undefined,
@@ -211,7 +243,7 @@ export default function FeedingScreen() {
     } finally {
       setIsSubmittingFeeding(false)
     }
-  }, [foodType, notes, quantity, token])
+  }, [foodType, notes, quantity, selectedAnimal?.id, token])
 
   const deleteFeeding = useCallback(
     (id: string) => {
@@ -256,6 +288,11 @@ export default function FeedingScreen() {
       return
     }
 
+    if (!selectedAnimal?.id) {
+      Alert.alert('Select an animal', 'Choose or create an animal before logging health data.')
+      return
+    }
+
     const trimmedType = measurementType.trim()
     if (!trimmedType) {
       Alert.alert('Required Field', 'Please provide a measurement type')
@@ -282,6 +319,7 @@ export default function FeedingScreen() {
         method: 'POST',
         token,
         body: {
+          animalId: selectedAnimal.id,
           metricType: trimmedType,
           value: numericValue,
           unit: trimmedUnit ? trimmedUnit : undefined,
@@ -311,7 +349,7 @@ export default function FeedingScreen() {
     } finally {
       setIsSubmittingMeasurement(false)
     }
-  }, [measurementNotes, measurementType, measurementUnit, measurementValue, token])
+  }, [measurementNotes, measurementType, measurementUnit, measurementValue, selectedAnimal?.id, token])
 
   const deleteMeasurement = useCallback(
     (id: string) => {
@@ -393,6 +431,7 @@ export default function FeedingScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <AnimalSelector />
         <ThemedView style={styles.header}>
           <ThemedText type="title" style={{ color: colors.text }}>
             Husbandry Log
@@ -400,7 +439,14 @@ export default function FeedingScreen() {
           <TouchableOpacity
             activeOpacity={0.8}
             style={[styles.addButton, { backgroundColor: primaryColor, ...Shadows.sm }]}
-            onPress={() => setShowForm((current) => !current)}
+            onPress={() => {
+              if (!selectedAnimal?.id) {
+                Alert.alert('Select an animal', 'Add an animal before logging entries.')
+                return
+              }
+              setShowForm((current) => !current)
+            }}
+            disabled={!canLogEntries}
           >
             <IconSymbol name={showForm ? 'xmark' : 'plus'} size={22} color="#fff" />
           </TouchableOpacity>
@@ -632,15 +678,23 @@ export default function FeedingScreen() {
         {activeSegment === 'feedings' ? (
           <ThemedView style={styles.sectionContainer}>
             <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>
-            Feeding History
-          </ThemedText>
-            {isLoadingActiveSegment ? (
-            <ThemedView style={styles.emptyState}>
-              <IconSymbol
+              Feeding History
+            </ThemedText>
+            {showAnimalPrompt ? (
+              <ThemedView style={styles.emptyState}>
+                <IconSymbol name="tortoise" size={48} color={colors.iconSecondary} />
+                <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}
+                >
+                  Select or add an animal above to start logging feedings.
+                </ThemedText>
+              </ThemedView>
+            ) : isLoadingActiveSegment ? (
+              <ThemedView style={styles.emptyState}>
+                <IconSymbol
                   name="arrow.triangle.2.circlepath"
                   size={36}
-                color={colors.iconSecondary}
-              />
+                  color={colors.iconSecondary}
+                />
                 <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
                   Loading feedings…
                 </ThemedText>
@@ -648,11 +702,11 @@ export default function FeedingScreen() {
             ) : sortedFeedings.length === 0 ? (
               <ThemedView style={styles.emptyState}>
                 <IconSymbol name="fork.knife" size={48} color={colors.iconSecondary} />
-              <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No feedings logged yet. Tap the + button to add your first feeding!
-              </ThemedText>
-            </ThemedView>
-          ) : (
+                <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  No feedings logged yet. Tap the + button to add your first feeding!
+                </ThemedText>
+              </ThemedView>
+            ) : (
               sortedFeedings.map((feeding) => {
                 const dateLabel = feeding.date.toLocaleDateString()
                 const timeLabel = feeding.date.toLocaleTimeString([], {
@@ -715,7 +769,15 @@ export default function FeedingScreen() {
             <ThemedText type="subtitle" style={[styles.sectionTitle, { color: colors.text }]}>
               Health Log
             </ThemedText>
-            {isLoadingActiveSegment ? (
+            {showAnimalPrompt ? (
+              <ThemedView style={styles.emptyState}>
+                <IconSymbol name="stethoscope" size={48} color={colors.iconSecondary} />
+                <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}
+                >
+                  Select or add an animal above to start logging health data.
+                </ThemedText>
+              </ThemedView>
+            ) : isLoadingActiveSegment ? (
               <ThemedView style={styles.emptyState}>
                 <IconSymbol
                   name="arrow.triangle.2.circlepath"

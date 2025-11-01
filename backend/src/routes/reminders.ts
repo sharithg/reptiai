@@ -3,7 +3,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { requireAuth } from '../auth/session'
-import { db, reminder } from '../db/db'
+import { animal, db, reminder } from '../db/db'
 
 const reminderResponseSchema = z.object({
   id: z.string().uuid(),
@@ -13,6 +13,7 @@ const reminderResponseSchema = z.object({
   dueDate: z.string().nullable(),
   isCompleted: z.boolean(),
   notificationId: z.string().nullable(),
+  animalId: z.string().uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -20,6 +21,7 @@ const reminderResponseSchema = z.object({
 type ReminderResponse = z.infer<typeof reminderResponseSchema>
 
 const createReminderSchema = z.object({
+  animalId: z.string().uuid(),
   title: z
     .string()
     .trim()
@@ -38,10 +40,15 @@ const updateReminderSchema = z.object({
   dueDate: z.coerce.date().nullable().optional(),
   isCompleted: z.boolean().optional(),
   notificationId: z.string().trim().max(255).nullable().optional(),
+  animalId: z.string().uuid().optional(),
 })
 
 const reminderParamsSchema = z.object({
   id: z.string().uuid(),
+})
+
+const reminderQuerySchema = z.object({
+  animalId: z.string().uuid(),
 })
 
 function toReminderResponse(record: typeof reminder.$inferSelect): ReminderResponse {
@@ -53,6 +60,7 @@ function toReminderResponse(record: typeof reminder.$inferSelect): ReminderRespo
     dueDate: record.dueDate ? record.dueDate.toISOString() : null,
     isCompleted: record.isCompleted,
     notificationId: record.notificationId ?? null,
+    animalId: record.animalId ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   }
@@ -72,7 +80,13 @@ export async function registerReminderRoutes(app: FastifyInstance) {
       return
     }
 
-    const { title, notes, isReminder = false, dueDate, notificationId } = parsed.data
+    const { animalId, title, notes, isReminder = false, dueDate, notificationId } = parsed.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
 
     const sanitizedNotes = notes && notes.length > 0 ? notes : null
     const sanitizedNotificationId =
@@ -82,6 +96,7 @@ export async function registerReminderRoutes(app: FastifyInstance) {
       .insert(reminder)
       .values({
         userId: auth.user.id,
+        animalId,
         title,
         notes: sanitizedNotes,
         isReminder,
@@ -97,10 +112,24 @@ export async function registerReminderRoutes(app: FastifyInstance) {
     const auth = await requireAuth(request, reply)
     if (!auth) return
 
+    const parsedQuery = reminderQuerySchema.safeParse(request.query)
+    if (!parsedQuery.success) {
+      reply.code(400).send({ error: 'Invalid reminders query parameters' })
+      return
+    }
+
+    const { animalId } = parsedQuery.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
+
     const records = await db
       .select()
       .from(reminder)
-      .where(eq(reminder.userId, auth.user.id))
+      .where(and(eq(reminder.userId, auth.user.id), eq(reminder.animalId, animalId)))
       .orderBy(desc(reminder.dueDate), desc(reminder.createdAt))
 
     reply.send(records.map(toReminderResponse))
@@ -148,6 +177,14 @@ export async function registerReminderRoutes(app: FastifyInstance) {
       updatePayload.notificationId = updates.notificationId && updates.notificationId.length > 0
         ? updates.notificationId
         : null
+    if (updates.animalId !== undefined) {
+      const ownedAnimal = await ensureAnimalOwnership(auth.user.id, updates.animalId)
+      if (!ownedAnimal) {
+        reply.code(404).send({ error: 'Animal not found' })
+        return
+      }
+      updatePayload.animalId = updates.animalId
+    }
 
     const [updated] = await db
       .update(reminder)
@@ -187,5 +224,15 @@ export async function registerReminderRoutes(app: FastifyInstance) {
 
     reply.send({ success: true })
   })
+}
+
+async function ensureAnimalOwnership(userId: string, animalId: string) {
+  const [record] = await db
+    .select({ id: animal.id })
+    .from(animal)
+    .where(and(eq(animal.id, animalId), eq(animal.userId, userId)))
+    .limit(1)
+
+  return record ?? null
 }
 

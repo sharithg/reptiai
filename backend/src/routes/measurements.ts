@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 
 import { requireAuth } from '../auth/session'
-import { db, measurementLog } from '../db/db'
+import { animal, db, measurementLog } from '../db/db'
 
 const MEASUREMENT_LIMIT = 200
 
@@ -14,6 +14,7 @@ const measurementResponseSchema = z.object({
   unit: z.string().nullable(),
   notes: z.string().nullable(),
   recordedAt: z.string(),
+  animalId: z.string().uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -22,6 +23,7 @@ type MeasurementResponse = z.infer<typeof measurementResponseSchema>
 
 const measurementInputSchema = z
   .object({
+    animalId: z.string().uuid(),
     metricType: z
       .string()
       .trim()
@@ -46,6 +48,10 @@ const measurementParamsSchema = z.object({
   id: z.string().uuid(),
 })
 
+const measurementQuerySchema = z.object({
+  animalId: z.string().uuid(),
+})
+
 function toMeasurementResponse(record: typeof measurementLog.$inferSelect): MeasurementResponse {
   return {
     id: record.id,
@@ -54,6 +60,7 @@ function toMeasurementResponse(record: typeof measurementLog.$inferSelect): Meas
     unit: record.unit ?? null,
     notes: record.notes ?? null,
     recordedAt: record.recordedAt.toISOString(),
+    animalId: record.animalId ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   }
@@ -74,12 +81,19 @@ export async function registerMeasurementRoutes(app: FastifyInstance) {
       return
     }
 
-    const { metricType, value, unit, notes, recordedAt } = parsed.data
+    const { animalId, metricType, value, unit, notes, recordedAt } = parsed.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
 
     const [record] = await db
       .insert(measurementLog)
       .values({
         userId: auth.user.id,
+        animalId,
         metricType,
         value: value ?? null,
         unit: unit && unit.length > 0 ? unit : null,
@@ -95,10 +109,24 @@ export async function registerMeasurementRoutes(app: FastifyInstance) {
     const auth = await requireAuth(request, reply)
     if (!auth) return
 
+    const parsedQuery = measurementQuerySchema.safeParse(request.query)
+    if (!parsedQuery.success) {
+      reply.code(400).send({ error: 'Invalid measurements query parameters' })
+      return
+    }
+
+    const { animalId } = parsedQuery.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
+
     const records = await db
       .select()
       .from(measurementLog)
-      .where(eq(measurementLog.userId, auth.user.id))
+      .where(and(eq(measurementLog.userId, auth.user.id), eq(measurementLog.animalId, animalId)))
       .orderBy(desc(measurementLog.recordedAt), desc(measurementLog.createdAt))
       .limit(MEASUREMENT_LIMIT)
 
@@ -129,5 +157,15 @@ export async function registerMeasurementRoutes(app: FastifyInstance) {
 
     reply.send({ success: true })
   })
+}
+
+async function ensureAnimalOwnership(userId: string, animalId: string) {
+  const [record] = await db
+    .select({ id: animal.id })
+    .from(animal)
+    .where(and(eq(animal.id, animalId), eq(animal.userId, userId)))
+    .limit(1)
+
+  return record ?? null
 }
 

@@ -9,7 +9,7 @@ import React, {
   type ReactNode,
 } from "react";
 
-import { apiRequest } from "@/lib/api";
+import { apiRequest, ApiError } from "@/lib/api";
 
 const AUTH_STORAGE_KEY = "@reptiai/auth-state";
 
@@ -142,6 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         await applyAuthState(payload.user, payload.session);
     } catch (authError) {
+      if (__DEV__) {
+        console.warn("[AuthProvider] authentication error", authError);
+        if (authError instanceof ApiError && authError.cause) {
+          console.warn("[AuthProvider] authentication error cause", authError.cause);
+        }
+      }
       const message =
           authError instanceof Error ? authError.message : "Authentication failed";
       setError(message);

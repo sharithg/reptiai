@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify'
 
 import { env } from './env'
 import { registerAuthRoutes } from './routes/auth'
+import { registerAnimalRoutes } from './routes/animals'
 import { registerFeedingRoutes } from './routes/feedings'
 import { registerMeasurementRoutes } from './routes/measurements'
 import { registerReminderRoutes } from './routes/reminders'
@@ -20,6 +21,7 @@ export async function createServer(): Promise<FastifyInstance> {
   app.get('/health', async () => ({ status: 'ok' }))
 
   await registerAuthRoutes(app)
+  await registerAnimalRoutes(app)
   await registerFeedingRoutes(app)
   await registerMeasurementRoutes(app)
   await registerReminderRoutes(app)

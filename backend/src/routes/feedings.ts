@@ -3,7 +3,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { requireAuth } from '../auth/session'
-import { db, feedingRecord } from '../db/db'
+import { animal, db, feedingRecord } from '../db/db'
 
 const feedingResponseSchema = z.object({
   id: z.string().uuid(),
@@ -13,6 +13,7 @@ const feedingResponseSchema = z.object({
   quantity: z.string().nullable(),
   notes: z.string().nullable(),
   weight: z.number().nullable(),
+  animalId: z.string().uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -20,6 +21,7 @@ const feedingResponseSchema = z.object({
 type FeedingResponse = z.infer<typeof feedingResponseSchema>
 
 const feedingInputSchema = z.object({
+  animalId: z.string().uuid(),
   feedingDate: z.coerce.date().optional(),
   consumed: z.enum(['fully', 'partially', 'refused']).optional(),
   foodType: z
@@ -40,6 +42,10 @@ const deleteParamsSchema = z.object({
   id: z.string().uuid(),
 })
 
+const feedingQuerySchema = z.object({
+  animalId: z.string().uuid(),
+})
+
 function toFeedingResponse(record: typeof feedingRecord.$inferSelect): FeedingResponse {
   return {
     id: record.id,
@@ -49,6 +55,7 @@ function toFeedingResponse(record: typeof feedingRecord.$inferSelect): FeedingRe
     quantity: record.quantity ?? null,
     notes: record.notes ?? null,
     weight: record.weight ?? null,
+    animalId: record.animalId ?? null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   }
@@ -69,14 +76,13 @@ export async function registerFeedingRoutes(app: FastifyInstance) {
       return
     }
 
-    const {
-      feedingDate,
-      consumed = 'fully',
-      foodType,
-      quantity,
-      notes,
-      weight,
-    } = parsed.data
+    const { animalId, feedingDate, consumed = 'fully', foodType, quantity, notes, weight } = parsed.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
 
     const sanitizedFoodType = foodType.trim()
     const sanitizedQuantity = quantity.trim()
@@ -86,6 +92,7 @@ export async function registerFeedingRoutes(app: FastifyInstance) {
       .insert(feedingRecord)
       .values({
         userId: auth.user.id,
+        animalId,
         feedingDate: feedingDate ?? new Date(),
         consumed,
         foodType: sanitizedFoodType,
@@ -102,10 +109,24 @@ export async function registerFeedingRoutes(app: FastifyInstance) {
     const auth = await requireAuth(request, reply)
     if (!auth) return
 
+    const parsedQuery = feedingQuerySchema.safeParse(request.query)
+    if (!parsedQuery.success) {
+      reply.code(400).send({ error: 'Invalid feedings query parameters' })
+      return
+    }
+
+    const { animalId } = parsedQuery.data
+
+    const ownedAnimal = await ensureAnimalOwnership(auth.user.id, animalId)
+    if (!ownedAnimal) {
+      reply.code(404).send({ error: 'Animal not found' })
+      return
+    }
+
     const records = await db
       .select()
       .from(feedingRecord)
-      .where(eq(feedingRecord.userId, auth.user.id))
+      .where(and(eq(feedingRecord.userId, auth.user.id), eq(feedingRecord.animalId, animalId)))
       .orderBy(desc(feedingRecord.feedingDate), desc(feedingRecord.createdAt))
       .limit(200)
 
@@ -136,5 +157,15 @@ export async function registerFeedingRoutes(app: FastifyInstance) {
 
     reply.send({ success: true })
   })
+}
+
+async function ensureAnimalOwnership(userId: string, animalId: string) {
+  const [record] = await db
+    .select({ id: animal.id })
+    .from(animal)
+    .where(and(eq(animal.id, animalId), eq(animal.userId, userId)))
+    .limit(1)
+
+  return record ?? null
 }
 
