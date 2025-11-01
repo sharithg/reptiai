@@ -69,8 +69,7 @@ jobs:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
         run: |
           pnpm install --frozen-lockfile
-          pnpm redeploy -- \
-            --serviceId=${{ secrets.RAILWAY_SERVICE_ID }} \
+          pnpm redeploy --serviceId=${{ secrets.RAILWAY_SERVICE_ID }} \
             --environmentId=${{ secrets.RAILWAY_ENVIRONMENT_ID }} \
             --image=index.docker.io/${{ secrets.DOCKER_USERNAME }}/reptiai-backend:${{ steps.meta.outputs.version }}
 
