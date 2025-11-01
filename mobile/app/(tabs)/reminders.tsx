@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/use-auth";
 import { useAnimals } from "@/hooks/use-animals";
 import { apiRequest, ApiError } from "@/lib/api";
@@ -81,6 +82,7 @@ export default function RemindersScreen() {
   const colorScheme = useColorScheme();
   const { session } = useAuth();
   const { selectedAnimal, isHydrated: animalsHydrated } = useAnimals();
+  const insets = useSafeAreaInsets();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -454,7 +456,10 @@ export default function RemindersScreen() {
     <ThemedView style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + Spacing.lg },
+        ]}
       >
         <AnimalSelector />
         <ThemedView style={styles.header}>
@@ -934,7 +939,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.lg,
-    paddingTop: Platform.OS === "ios" ? 60 : Spacing.xl,
   },
   addButton: {
     width: 48,

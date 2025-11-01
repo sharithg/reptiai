@@ -1,31 +1,34 @@
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AnimalSelector } from "@/components/animal-selector";
 import { ThemedSurface } from "@/components/themed-surface";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BorderRadius, Colors, Spacing } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAnimals } from "@/hooks/use-animals";
 import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+  const { selectedAnimal, isHydrated } = useAnimals();
   const colors = Colors[colorScheme ?? "light"];
   const primaryColor = colors.primary;
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + Spacing.lg },
+        ]}
         showsVerticalScrollIndicator={false}
       >
+        <AnimalSelector />
         <ThemedView style={styles.header}>
           <ThemedText type="title" style={{ color: colors.text }}>
             Reptile Care
@@ -36,6 +39,51 @@ export default function HomeScreen() {
             Keep track of your reptile&apos;s health and care routine
           </ThemedText>
         </ThemedView>
+
+        <ThemedSurface tone="elevated" style={styles.activeAnimalCard}>
+          {selectedAnimal ? (
+            <>
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ color: colors.text }}
+              >
+                Active Animal
+              </ThemedText>
+              <ThemedText
+                type="title"
+                style={{ color: colors.primary, marginTop: Spacing.xs }}
+              >
+                {selectedAnimal.name}
+              </ThemedText>
+              {selectedAnimal.species ? (
+                <ThemedText style={{ color: colors.textSecondary }}>
+                  {selectedAnimal.species}
+                </ThemedText>
+              ) : null}
+              <ThemedText
+                style={{ color: colors.textSecondary, marginTop: Spacing.sm }}
+              >
+                Head to Feeding or Reminders to log care just for this animal.
+              </ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ color: colors.text }}
+              >
+                No active animal yet
+              </ThemedText>
+              <ThemedText
+                style={{ color: colors.textSecondary, marginTop: Spacing.xs }}
+              >
+                {isHydrated
+                  ? "Add your first animal above to unlock individual care tracking."
+                  : "Loading animal list…"}
+              </ThemedText>
+            </>
+          )}
+        </ThemedSurface>
 
         <ThemedView style={styles.quickActionContainer}>
           <ThemedText
@@ -155,11 +203,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.lg,
-    paddingTop: Platform.OS === "ios" ? 60 : Spacing.xl,
     paddingBottom: Spacing.xxl,
   },
   header: {
     marginBottom: Spacing.xl,
+  },
+  activeAnimalCard: {
+    marginBottom: Spacing.lg,
   },
   subtitle: {
     marginTop: Spacing.sm,

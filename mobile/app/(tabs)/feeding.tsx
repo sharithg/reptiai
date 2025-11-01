@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { AnimalSelector } from '@/components/animal-selector'
 import { ThemedSurface } from '@/components/themed-surface'
@@ -74,6 +74,7 @@ export default function FeedingScreen() {
   const colorScheme = useColorScheme()
   const { session } = useAuth()
   const { selectedAnimal, isHydrated: animalsHydrated } = useAnimals()
+  const insets = useSafeAreaInsets()
   const [activeSegment, setActiveSegment] = useState<Segment>('feedings')
   const [showForm, setShowForm] = useState(false)
 
@@ -428,7 +429,7 @@ export default function FeedingScreen() {
     <ThemedView style={styles.container}>
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + Spacing.lg }]}
         showsVerticalScrollIndicator={false}
       >
         <AnimalSelector />
@@ -883,7 +884,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.lg,
-    paddingTop: Platform.OS === 'ios' ? 60 : Spacing.xl,
   },
   addButton: {
     width: 48,
