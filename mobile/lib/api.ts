@@ -1,8 +1,16 @@
-const DEFAULT_API_BASE_URL = "http://localhost:3001";
+import Constants from "expo-constants";
 
-export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL)
-  .trim()
-  .replace(/\/$/, "");
+const LOCAL_DEFAULT_BASE_URL = "http://localhost:3001";
+const DEVICE_DEFAULT_BASE_URL = "https://reptiai-backend-production.up.railway.app";
+
+const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+
+export const API_BASE_URL = (configuredBaseUrl && configuredBaseUrl.length > 0
+  ? configuredBaseUrl
+  : Constants.isDevice
+    ? DEVICE_DEFAULT_BASE_URL
+    : LOCAL_DEFAULT_BASE_URL
+).replace(/\/$/, "");
 
 export type ApiRequestOptions = {
   method?: string;

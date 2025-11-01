@@ -45,11 +45,12 @@ Expo Router application for managing reptile care with username/password authent
 2. Creating a new account calls `/auth/register`, which immediately signs the user in after the account is created.
 3. The Settings screen shows the signed-in username, role, and allows signing out, which clears local state and notifies the backend.
 
-## Data Sync
+### Data Sync
 
 - Feeding logs are saved to the backend via `/feedings`; the tracker screen lists the latest records for the signed-in user.
 - Health metrics (weight, length, notes, etc.) live in `/measurements` and surface alongside feedings inside the “Health Log” segment of the Feeding tab.
 - Reminders and TODOs persist through `/reminders`; completing, reactivating, or deleting an item updates the backend and (when possible) re-schedules local notifications.
+- When the app runs on a physical device without `EXPO_PUBLIC_API_BASE_URL`, it automatically targets `https://reptiai-backend-production.up.railway.app`; local simulators/emulators still default to `http://localhost:3001`.
 
 ## Useful Scripts
 
