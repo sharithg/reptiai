@@ -116,64 +116,38 @@ export function AnimalSelector() {
   const activeLabel = selectedAnimal
     ? selectedAnimal.name
     : "Add your first animal";
-  const subtitleLabel =
-    selectedAnimal?.species ??
-    (selectedAnimal ? undefined : "Tap to manage animals");
+  const displayLabel = isHydrated ? activeLabel : "Loading animals…";
 
   return (
     <>
-      <ThemedSurface
-        style={[styles.selectorCard, { borderColor: colors.border }]}
-        elevation="md"
-        padding={null}
-        border={false}
-      >
+      <View style={styles.selectorHeader}>
         <TouchableOpacity
           accessibilityRole="button"
           activeOpacity={0.8}
-          style={styles.selectorContent}
+          style={styles.selectorTrigger}
           onPress={handleOpen}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <View
-            style={[
-              styles.selectorIcon,
-              { backgroundColor: primaryColor + "15" },
-            ]}
+          <ThemedText
+            type="title"
+            style={[styles.selectorLabel, { color: colors.text }]}
           >
-            <IconSymbol name="tortoise" size={26} color={primaryColor} />
-          </View>
-          <View style={styles.selectorTextContainer}>
-            <ThemedText type="defaultSemiBold" style={{ color: colors.text }}>
-              {activeLabel}
-            </ThemedText>
-            {subtitleLabel ? (
-              <ThemedText style={{ color: colors.textSecondary }}>
-                {subtitleLabel}
-              </ThemedText>
-            ) : null}
-            {!isHydrated ? (
-              <View style={styles.inlineStatus}>
-                <ActivityIndicator size="small" color={primaryColor} />
-                <ThemedText
-                  style={[styles.statusText, { color: colors.textSecondary }]}
-                >
-                  Loading animals…
-                </ThemedText>
-              </View>
-            ) : null}
-            {error ? (
-              <ThemedText style={[styles.errorText, { color: colors.error }]}>
-                {error}
-              </ThemedText>
-            ) : null}
-          </View>
-          <IconSymbol
-            name="chevron.right"
-            size={18}
-            color={colors.iconSecondary}
-          />
+            {displayLabel}
+          </ThemedText>
+          {isHydrated ? (
+            <IconSymbol
+              name="chevron.down"
+              size={16}
+              color={colors.iconSecondary}
+            />
+          ) : null}
         </TouchableOpacity>
-      </ThemedSurface>
+        {error ? (
+          <ThemedText style={[styles.errorText, { color: colors.error }]}>
+            {error}
+          </ThemedText>
+        ) : null}
+      </View>
 
       <Modal
         animationType="slide"
@@ -363,36 +337,17 @@ export function AnimalSelector() {
 }
 
 const styles = StyleSheet.create({
-  selectorCard: {
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
+  selectorHeader: {
+    marginBottom: Spacing.md,
   },
-  selectorContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    padding: Spacing.md,
-  },
-  selectorIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectorTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  inlineStatus: {
+  selectorTrigger: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-    marginTop: Spacing.xs,
   },
-  statusText: {
-    fontSize: 13,
+  selectorLabel: {
+    fontSize: 22,
+    fontWeight: "600",
   },
   errorText: {
     fontSize: 13,
